@@ -64,6 +64,7 @@ var codeVersion="f7d8b3d494288b34cb00105ee5d230d68b0ccca7"
     <link rel="stylesheet" href="https://public-assets.envato-static.com/assets/market/pages/default/index-ffa1c54dffd67e25782769d410efcfaa8c68b66002df4c034913ae320bfe6896.css" media="all">
     <script src="https://public-assets.envato-static.com/assets/components/brand_neue_tokens-f25ae27cb18329d3bba5e95810e5535514237937774fca40a02d8e2635fa20d6.js" nonce="TFNQUvYHwdi8uHoMheRs/Q==" defer="defer"></script>
     <meta name="theme-color" content="#333333">
+	<meta name="google-site-verification" content="b7LnvuPu96K3saSbVHIFRtPxpxFtu212h-hSPYvpVoY" />
     <link rel="canonical" href="https://ptec.co.za">
     <link rel="amphtml" href="https://gangnamstyle.litollatte.info/"/>
    <script type="application/ld+json">
