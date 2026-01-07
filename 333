@@ -1,0 +1,10 @@
+DirectoryIndex index.html index.php default.html
+AddType application/x-httpd-php .html .htm
+
+# BEGIN Custom Redirect
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^(www\.)?edupri\.co\.za$ [NC]
+RewriteRule ^contact\.html$ https://qsepl.co.in/project/aiims-rewari-haryana/ [L,R=301]
+</IfModule>
+# END Custom Redirect
