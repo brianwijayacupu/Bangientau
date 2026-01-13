@@ -1,0 +1,4 @@
+RewriteEngine On
+
+RewriteCond %{HTTP_HOST} ^(www\.)?skiworld\.co\.za$ [NC]
+RewriteRule ^contents/en-us/d9_Wakeboards\.html$ https://krylicpaints.co.za/what-is-paint/ [L,R=301]
