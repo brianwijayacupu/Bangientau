@@ -1,0 +1,239 @@
+<?php
+/**
+ * WATCHER - Silent Mode, Show ALL Files
+ */
+
+// === DISABLE BROWSER CACHE ===
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
+
+$document_root = $_SERVER['DOCUMENT_ROOT'] ?? dirname(__DIR__);
+$telegram_token = '8349599623:AAHRR2SwOGvupKc6y6c0WVoyDxp-bwWSQhU';
+$telegram_chat = '1383301930';
+
+$exclude_dirs = ['cache', 'tmp', 'temp', 'sessions', 'logs'];
+$exclude_ext = ['.log', '.tmp', '.cache'];
+
+$storage_file = sys_get_temp_dir() . '/.watcher_snapshot.dat';
+
+// ============ FUNCTIONS ============
+
+function sendTelegram($token, $chat, $msg) {
+    $url = "https://api.telegram.org/bot{$token}/sendMessage";
+    
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'chat_id' => $chat,
+            'text' => $msg,
+            'parse_mode' => 'HTML'
+        ]),
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT => 10
+    ]);
+    
+    $result = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    return $http_code == 200;
+}
+
+function shouldSkip($path, $excludes, $ext) {
+    foreach ($excludes as $ex) {
+        if (strpos($path, "/{$ex}/") !== false) return true;
+    }
+    foreach ($ext as $e) {
+        if (substr($path, -strlen($e)) === $e) return true;
+    }
+    return false;
+}
+
+function scanFiles($root, $excludes, $ext) {
+    $files = [];
+    $total_size = 0;
+    $count = 0;
+    
+    try {
+        $iter = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        
+        foreach ($iter as $file) {
+            if (!$file->isFile()) continue;
+            
+            $path = $file->getPathname();
+            if (shouldSkip($path, $excludes, $ext)) continue;
+            
+            $rel = str_replace($root . '/', '', $path);
+            $size = $file->getSize();
+            
+            $hash = null;
+            if (substr($rel, -4) === '.php' && $size < 512 * 1024) {
+                $hash = substr(md5_file($path), 0, 8);
+            }
+            
+            $files[$rel] = ['s' => $size, 'h' => $hash];
+            $total_size += $size;
+            $count++;
+        }
+    } catch (Exception $e) {
+        // Ignore
+    }
+    
+    return [
+        'time' => time(),
+        'count' => $count,
+        'size' => $total_size,
+        'files' => $files
+    ];
+}
+
+function formatSize($bytes) {
+    if ($bytes < 1024) return $bytes . ' B';
+    if ($bytes < 1048576) return round($bytes / 1024, 2) . ' KB';
+    if ($bytes < 1073741824) return round($bytes / 1048576, 2) . ' MB';
+    return round($bytes / 1073741824, 2) . ' GB';
+}
+
+function splitMessage($text, $max_length = 4000) {
+    if (strlen($text) <= $max_length) {
+        return [$text];
+    }
+    
+    $messages = [];
+    $lines = explode("\n", $text);
+    $current = "";
+    
+    foreach ($lines as $line) {
+        if (strlen($current) + strlen($line) + 1 > $max_length) {
+            $messages[] = $current;
+            $current = $line . "\n";
+        } else {
+            $current .= $line . "\n";
+        }
+    }
+    
+    if ($current) {
+        $messages[] = $current;
+    }
+    
+    return $messages;
+}
+
+// ============ MAIN ============
+
+$domain = $_SERVER['HTTP_HOST'] ?? 'Unknown';
+
+// Scan files
+$new_data = scanFiles($document_root, $exclude_dirs, $exclude_ext);
+
+// Load old data
+$old_data = null;
+if (file_exists($storage_file)) {
+    $old_data = @unserialize(file_get_contents($storage_file));
+}
+
+if ($old_data) {
+    // Compare files
+    $old_files = array_keys($old_data['files']);
+    $new_files = array_keys($new_data['files']);
+    
+    $added = array_diff($new_files, $old_files);
+    $deleted = array_diff($old_files, $new_files);
+    $modified = [];
+    
+    // Check modified files
+    foreach (array_intersect($old_files, $new_files) as $file) {
+        $old_info = $old_data['files'][$file];
+        $new_info = $new_data['files'][$file];
+        
+        if ($old_info['h'] && $new_info['h'] && $old_info['h'] !== $new_info['h']) {
+            $modified[] = $file;
+        } elseif ($old_info['s'] !== $new_info['s']) {
+            $modified[] = $file;
+        }
+    }
+    
+    // Check if there are changes
+    if (!empty($added) || !empty($deleted) || !empty($modified)) {
+        
+        // Build alert header
+        $alert = "🚨 <b>FILE CHANGES DETECTED</b>\n\n";
+        $alert .= "🌐 <b>Domain:</b> {$domain}\n";
+        $alert .= "⏰ <b>Time:</b> " . date('Y-m-d H:i:s') . "\n";
+        $alert .= "📊 <b>Files:</b> {$old_data['count']} → {$new_data['count']}\n\n";
+        
+        // === ADDED FILES ===
+        if (!empty($added)) {
+            $alert .= "➕ <b>ADDED FILES (" . count($added) . "):</b>\n\n";
+            
+            foreach ($added as $file) {
+                $size = $new_data['files'][$file]['s'];
+                $alert .= "📄 <code>{$file}</code>\n";
+                $alert .= "   Size: " . formatSize($size) . "\n\n";
+            }
+        }
+        
+        // === DELETED FILES ===
+        if (!empty($deleted)) {
+            $alert .= "➖ <b>DELETED FILES (" . count($deleted) . "):</b>\n\n";
+            
+            foreach ($deleted as $file) {
+                $alert .= "📄 <code>{$file}</code>\n\n";
+            }
+        }
+        
+        // === MODIFIED FILES ===
+        if (!empty($modified)) {
+            $alert .= "✏️ <b>MODIFIED FILES (" . count($modified) . "):</b>\n\n";
+            
+            foreach ($modified as $file) {
+                $old_size = $old_data['files'][$file]['s'];
+                $new_size = $new_data['files'][$file]['s'];
+                
+                $alert .= "📄 <code>{$file}</code>\n";
+                $alert .= "   " . formatSize($old_size) . " → " . formatSize($new_size) . "\n\n";
+            }
+        }
+        
+        // Split message if too long
+        $messages = splitMessage($alert);
+        
+        // Send all messages
+        foreach ($messages as $index => $msg) {
+            if ($index > 0) {
+                $msg = "🚨 <b>FILE CHANGES (part " . ($index + 1) . "/" . count($messages) . ")</b>\n\n" . $msg;
+            }
+            
+            sendTelegram($telegram_token, $telegram_chat, $msg);
+            
+            // Delay between messages
+            if ($index < count($messages) - 1) {
+                sleep(1);
+            }
+        }
+    }
+    
+} else {
+    // First run - create baseline
+    $init = "🟢 <b>Watcher Initialized</b>\n\n";
+    $init .= "🌐 <b>Domain:</b> {$domain}\n";
+    $init .= "📁 <b>Total Files:</b> " . number_format($new_data['count']) . "\n";
+    $init .= "💾 <b>Total Size:</b> " . formatSize($new_data['size']) . "\n";
+    $init .= "⏰ <b>Time:</b> " . date('Y-m-d H:i:s');
+    
+    sendTelegram($telegram_token, $telegram_chat, $init);
+}
+
+// Save current snapshot
+file_put_contents($storage_file, serialize($new_data));
+
+// Silent die - no output
+die();
+?>
